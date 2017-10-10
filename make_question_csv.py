@@ -28,21 +28,23 @@ category_to_icon_filenames = {
     'Wild': 'wild.png'
 } 
 
+question_limit = 8
+
 
 ### Program
 
-# Read TSV from standard input
-reader = csv.DictReader(sys.stdin, dialect=csv.excel_tab)
+# 1st argument is input filename, 2nd argument is output filename
+input_filename = sys.argv[1]
+output_filename = sys.argv[2]
 
 # Build up list of questions
+reader = csv.DictReader(open(input_filename), dialect=csv.excel_tab)
 questions = list(reader) 
 
 # Remove empty questions 
 questions = (q for q in questions if q['ID'] != '')
 # Remove extra whitespace in all fields
 questions = (dict(zip(q.keys(), (v.strip() for v in q.values()))) for q in questions)
-
-#questions = dict(zip(questions.keys(), (v.strip() for v in questions.values())))
 
 
 # Break into sub-lists by state
@@ -54,7 +56,7 @@ for state, state_questions in itertools.groupby(questions, key=lambda q: q['Stat
 # Prepare to write questions
 question_column_names = [name.format(i) for i in range(1, 9) for name in column_names_per_question]
 column_names = ['state'] + question_column_names
-writer = csv.DictWriter(sys.stdout, fieldnames=column_names, dialect=csv.excel_tab)
+writer = csv.DictWriter(open(output_filename, 'w'), fieldnames=column_names, dialect=csv.excel_tab)
 writer.writeheader()
 
 # Go through states in alphabetical order
@@ -64,6 +66,10 @@ for state in states:
     # Build up list of data
     row = {'state': state}
     for i, question in zip(itertools.count(), questions_by_state[state]):
+        if i >= question_limit: 
+            print("WARNING: Too many questions for state", state, file=sys.stderr)
+            continue
+
         row['question_{0}_category'.format(i+1)] = question['Category']
         row['@question_{0}_category_icon'.format(i+1)] = category_to_icon_filenames[question['Category']]
         row['question_{0}_text'.format(i+1)] = question["Question"]
@@ -74,7 +80,4 @@ for state in states:
         row['question_{0}_answer_letter'.format(i+1)] = question["Answer"]
         row['question_{0}_answer_text'.format(i+1)] = question[question["Answer"]]
     writer.writerow(row)
-
-#print('questions ', questions_by_state)
-
 
