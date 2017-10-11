@@ -28,7 +28,7 @@ category_to_icon_filenames = {
     'Wild': 'wild.png'
 } 
 
-question_limit = 8
+question_limit = 7
 
 
 ### Program
@@ -54,7 +54,7 @@ for state, state_questions in itertools.groupby(questions, key=lambda q: q['Stat
 
 
 # Prepare to write questions
-question_column_names = [name.format(i) for i in range(1, 9) for name in column_names_per_question]
+question_column_names = [name.format(i) for i in range(1, question_limit + 1) for name in column_names_per_question]
 column_names = ['state'] + question_column_names
 writer = csv.DictWriter(open(output_filename, 'w'), fieldnames=column_names, dialect=csv.excel_tab)
 writer.writeheader()
@@ -67,8 +67,8 @@ for state in states:
     row = {'state': state}
     for i, question in zip(itertools.count(), questions_by_state[state]):
         if i >= question_limit: 
-            print("WARNING: Too many questions for state", state, file=sys.stderr)
-            continue
+            print("WARNING: Extra (unused) questions for state", state, file=sys.stderr)
+            break
 
         row['question_{0}_category'.format(i+1)] = question['Category']
         row['@question_{0}_category_icon'.format(i+1)] = category_to_icon_filenames[question['Category']]
